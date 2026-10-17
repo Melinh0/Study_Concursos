@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import re
 import unicodedata
 from pathlib import Path
@@ -8,7 +7,6 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parent.parent
 PASTA_QUESTOES = RAIZ / "questões"
 PASTA_BACKUP = RAIZ / "backup"
-ARQUIVO_ADICIONAIS = PASTA_QUESTOES / "concursos_adicionais.json"
 
 CONCURSOS = {
     "CPRM": {
@@ -34,8 +32,6 @@ CONCURSOS = {
     },
 }
 
-_BANCO_INICIAL = set(CONCURSOS)
-
 
 def _slug(texto: str) -> str:
     normal = unicodedata.normalize("NFKD", texto)
@@ -44,29 +40,33 @@ def _slug(texto: str) -> str:
     return slug or "CONCURSO"
 
 
-def _carregar_adicionais() -> None:
-    if not ARQUIVO_ADICIONAIS.exists():
-        return
-    try:
-        with ARQUIVO_ADICIONAIS.open(encoding="utf-8") as arquivo:
-            dados = json.load(arquivo)
-    except (OSError, ValueError):
-        return
-    if isinstance(dados, dict):
-        for chave, info in dados.items():
-            if chave not in CONCURSOS and isinstance(info, dict):
-                CONCURSOS[chave] = info
+def rotulo_exibicao(info: dict) -> str:
+    rotulo = (info.get("rotulo") or "").strip()
+    descricao = (info.get("descricao") or "").strip()
+    if descricao and descricao != rotulo:
+        return f"{rotulo} — {descricao}"
+    return rotulo
 
 
-def _salvar_adicionais() -> None:
-    adicionais = {
-        chave: info for chave, info in CONCURSOS.items() if chave not in _BANCO_INICIAL
-    }
-    PASTA_QUESTOES.mkdir(parents=True, exist_ok=True)
-    temporario = ARQUIVO_ADICIONAIS.with_suffix(".json.tmp")
-    with temporario.open("w", encoding="utf-8") as arquivo:
-        json.dump(adicionais, arquivo, ensure_ascii=False, indent=2)
-    temporario.replace(ARQUIVO_ADICIONAIS)
+def _detectar_arquivos() -> None:
+    if not PASTA_QUESTOES.exists():
+        return
+    registrados = {info.get("arquivo") for info in CONCURSOS.values()}
+    for caminho in sorted(PASTA_QUESTOES.glob("questoes_*.json")):
+        if caminho.name in registrados:
+            continue
+        base = caminho.name[len("questoes_"): -len(".json")]
+        chave = _slug(base)
+        if not chave or chave in CONCURSOS:
+            continue
+        CONCURSOS[chave] = {
+            "rotulo": chave,
+            "descricao": "",
+            "arquivo": caminho.name,
+            "banco": f"study_progress_{chave.lower()}.db",
+            "concurso": chave,
+        }
+        registrados.add(caminho.name)
 
 
 def listar() -> list[dict]:
@@ -111,7 +111,6 @@ def adicionar(rotulo: str, descricao: str = "") -> str:
         "banco": f"study_progress_{chave.lower()}.db",
         "concurso": rotulo,
     }
-    _salvar_adicionais()
     return chave
 
 
@@ -123,4 +122,4 @@ def caminho_banco(chave: str) -> Path:
     return PASTA_BACKUP / obter(chave)["banco"]
 
 
-_carregar_adicionais()
+_detectar_arquivos()

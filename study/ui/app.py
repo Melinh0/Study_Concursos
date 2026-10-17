@@ -84,7 +84,7 @@ class Aplicacao(ctk.CTk):
             self.rotulo_concurso.configure(text=texto)
 
     def _rotulos_concursos(self) -> list[str]:
-        return [f"{item['rotulo']} — {item['descricao']}" for item in concursos.listar()]
+        return [concursos.rotulo_exibicao(item) for item in concursos.listar()]
 
     def _criar_barra_concurso(self):
         barra = ctk.CTkFrame(self, fg_color="transparent")
@@ -111,7 +111,7 @@ class Aplicacao(ctk.CTk):
 
     def _focar_concurso(self, chave: str):
         info = concursos.obter(chave)
-        exibicao = f"{info['rotulo']} — {info['descricao']}"
+        exibicao = concursos.rotulo_exibicao(info)
         self.menu_concurso.configure(values=self._rotulos_concursos())
         self.menu_concurso.set(exibicao)
         if chave == self.chave_concurso:
@@ -121,7 +121,7 @@ class Aplicacao(ctk.CTk):
 
     def _chave_do_rotulo(self, rotulo: str) -> str:
         for item in concursos.listar():
-            if f"{item['rotulo']} — {item['descricao']}" == rotulo:
+            if concursos.rotulo_exibicao(item) == rotulo:
                 return item["chave"]
         return self.chave_concurso
 
@@ -131,8 +131,7 @@ class Aplicacao(ctk.CTk):
             return
         if self.aba_extrator.extraindo:
             self.menu_concurso.set(
-                f"{concursos.obter(self.chave_concurso)['rotulo']} — "
-                f"{concursos.obter(self.chave_concurso)['descricao']}"
+                concursos.rotulo_exibicao(concursos.obter(self.chave_concurso))
             )
             return
         self.chave_concurso = nova_chave
