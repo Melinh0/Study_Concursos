@@ -8,6 +8,7 @@ import customtkinter as ctk
 from .. import concursos, dados, ia
 from ..extrator import api, cursos
 from ..extrator.extrator import ConfigExtracao, ExtratorQConcursos, abrir_navegador_para_login
+from . import responsivo
 
 
 class CampoFiltro(ctk.CTkFrame):
@@ -99,13 +100,20 @@ class AbaExtrator(ctk.CTkFrame):
         self._concurso_alvo: str | None = None
         self._disciplina_assuntos: str | None = None
 
+        envol = ctk.CTkFrame(self, fg_color="transparent", height=80)
+        envol.pack(fill="both", expand=True)
+        envol.pack_propagate(False)
+        self.formulario = ctk.CTkScrollableFrame(envol)
+        self.formulario.pack(fill="both", expand=True)
+        self.formulario.pack(fill="both", expand=True)
+
         self._criar_filtros()
         self._criar_opcoes()
         self._criar_acoes()
         self._criar_saida()
 
     def _criar_filtros(self):
-        painel = ctk.CTkFrame(self)
+        painel = ctk.CTkFrame(self.formulario)
         painel.pack(fill="x", pady=(0, 8))
         painel.columnconfigure(1, weight=1)
 
@@ -178,14 +186,14 @@ class AbaExtrator(ctk.CTkFrame):
         ]
         for indice, (chave, rotulo, tipo) in enumerate(linhas):
             campo = CampoFiltro(painel, rotulo, tipo, self.publicar)
-            campo.grid(row=indice + 1, column=0, sticky="w", pady=3)
+            campo.grid(row=indice + 1, column=0, sticky="ew", pady=3)
             self.campos[chave] = campo
 
         extras = ctk.CTkFrame(painel, fg_color="transparent")
-        extras.grid(row=1, column=1, sticky="ne", padx=(20, 0), rowspan=len(linhas) + 1)
+        extras.grid(row=1, column=1, sticky="nsew", padx=(20, 0), rowspan=len(linhas) + 1)
 
         quantidade = ctk.CTkFrame(extras, fg_color="transparent")
-        quantidade.pack(anchor="e", pady=3)
+        quantidade.pack(anchor="ne", pady=3)
         ctk.CTkLabel(quantidade, text="Máx. questões:", width=90, anchor="w").pack(side="left")
         self.entrada_quantidade = ctk.CTkEntry(quantidade, width=100)
         self.entrada_quantidade.insert(0, "20")
@@ -568,28 +576,33 @@ class AbaExtrator(ctk.CTkFrame):
         self.publicar(("busca_callback", callback, resultados))
 
     def _criar_opcoes(self):
-        opcoes = ctk.CTkFrame(self, fg_color="transparent")
+        opcoes = ctk.CTkFrame(self.formulario, fg_color="transparent")
         opcoes.pack(fill="x", pady=(0, 8))
 
         self.chk_gabarito = ctk.CTkCheckBox(opcoes, text="Extrair gabarito (requer login)")
         self.chk_gabarito.select()
-        self.chk_gabarito.pack(side="left", padx=(0, 16))
         self.chk_explicacao = ctk.CTkCheckBox(opcoes, text="Extrair explicação (requer login)")
         self.chk_explicacao.select()
-        self.chk_explicacao.pack(side="left", padx=(0, 16))
         self.chk_ia = ctk.CTkCheckBox(
             opcoes, text="Gerar resolução com IA", fg_color="#2E7D32", hover_color="#1B5E20"
         )
         self.chk_ia.select()
-        self.chk_ia.pack(side="left", padx=(0, 16))
         self.chk_headless = ctk.CTkCheckBox(opcoes, text="Modo invisível (headless)")
-        self.chk_headless.pack(side="left", padx=(0, 16))
-        ctk.CTkButton(
+        self.botao_entrar_site = ctk.CTkButton(
             opcoes, text="Entrar no QConcursos", width=180, command=self.entrar_no_site
-        ).pack(side="right")
+        )
+
+        itens = [
+            (self.chk_gabarito, (0, 16)),
+            (self.chk_explicacao, (0, 16)),
+            (self.chk_ia, (0, 16)),
+            (self.chk_headless, (0, 16)),
+            (self.botao_entrar_site, 0),
+        ]
+        responsivo.vigiar(opcoes, lambda: responsivo.refluir(opcoes, itens))
 
     def _criar_acoes(self):
-        acoes = ctk.CTkFrame(self, fg_color="transparent")
+        acoes = ctk.CTkFrame(self.formulario, fg_color="transparent")
         acoes.pack(fill="x", pady=(0, 8))
 
         self.botao_iniciar = ctk.CTkButton(
@@ -615,7 +628,7 @@ class AbaExtrator(ctk.CTkFrame):
 
     def _criar_saida(self):
         ctk.CTkLabel(self, text="PRÉVIA DA EXTRAÇÃO", anchor="w").pack(fill="x")
-        self.caixa_log = ctk.CTkTextbox(self, height=190, wrap="none")
+        self.caixa_log = ctk.CTkTextbox(self, height=100, wrap="none")
         self.caixa_log.pack(fill="both", expand=True, pady=(4, 6))
 
         rodape = ctk.CTkFrame(self, fg_color="transparent")

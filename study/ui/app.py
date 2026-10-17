@@ -17,13 +17,15 @@ class Aplicacao(ctk.CTk):
         super().__init__()
         tema.aplicar()
         self.title("Study Concursos")
-        self.geometry("1240x880")
-        self.minsize(1000, 720)
+        self._definir_limites()
 
         self.chave_concurso = concursos.listar()[0]["chave"]
         self.banco = BancoProgresso(concursos.caminho_banco(self.chave_concurso))
         self.questoes: list[dict] = []
         self.fila: queue.Queue = queue.Queue()
+        self._total_questoes = 0
+        self._wrap_atual = 0
+        self._status_atual: str | None = None
 
         self._criar_barra_concurso()
 
@@ -47,7 +49,39 @@ class Aplicacao(ctk.CTk):
 
         self.protocol("WM_DELETE_WINDOW", self.ao_fechar)
         self.recarregar_questoes()
+        self.bind("<Configure>", self._ao_redimensionar, add=True)
         self.after(200, self.processar_fila)
+
+    def _definir_limites(self):
+        escala = self._get_window_scaling()
+        largura_tela = self.winfo_screenwidth() / escala
+        altura_tela = self.winfo_screenheight() / escala
+        largura = int(min(1240, max(640, largura_tela * 0.6)))
+        altura = int(min(880, max(400, altura_tela * 0.75)))
+        self.geometry(f"{largura}x{altura}")
+        self.minsize(
+            min(640, int(largura_tela / 2)),
+            min(430, int(altura_tela / 2)),
+        )
+
+    def _ao_redimensionar(self, event):
+        if event.widget is not self:
+            return
+        self._atualizar_status_concurso()
+        wrap = max(220, event.width - 150)
+        if abs(wrap - self._wrap_atual) >= 24:
+            self._wrap_atual = wrap
+            self.aba_estudo.definir_wraplength(wrap)
+
+    def _atualizar_status_concurso(self):
+        info = concursos.obter(self.chave_concurso)
+        if self.winfo_width() >= 1000:
+            texto = f"{self._total_questoes} questão(ões) — banco: {info['arquivo']}"
+        else:
+            texto = f"{self._total_questoes} questão(ões)"
+        if texto != self._status_atual:
+            self._status_atual = texto
+            self.rotulo_concurso.configure(text=texto)
 
     def _rotulos_concursos(self) -> list[str]:
         return [f"{item['rotulo']} — {item['descricao']}" for item in concursos.listar()]
@@ -55,18 +89,19 @@ class Aplicacao(ctk.CTk):
     def _criar_barra_concurso(self):
         barra = ctk.CTkFrame(self, fg_color="transparent")
         barra.pack(fill="x", padx=12, pady=12)
+        barra.grid_columnconfigure(1, weight=1)
 
-        ctk.CTkLabel(barra, text="Concurso:", font=ctk.CTkFont(size=14, weight="bold")).pack(
-            side="left"
+        ctk.CTkLabel(barra, text="Concurso:", font=ctk.CTkFont(size=14, weight="bold")).grid(
+            row=0, column=0, sticky="w"
         )
         rotulos = self._rotulos_concursos()
         self.menu_concurso = ctk.CTkOptionMenu(
-            barra, width=420, values=rotulos, command=self._ao_trocar_concurso
+            barra, values=rotulos, command=self._ao_trocar_concurso
         )
         self.menu_concurso.set(rotulos[0])
-        self.menu_concurso.pack(side="left", padx=(8, 0))
-        self.rotulo_concurso = ctk.CTkLabel(barra, text="", text_color="#F26B21")
-        self.rotulo_concurso.pack(side="right")
+        self.menu_concurso.grid(row=0, column=1, sticky="ew", padx=8)
+        self.rotulo_concurso = ctk.CTkLabel(barra, text="", text_color="#F26B21", anchor="e")
+        self.rotulo_concurso.grid(row=0, column=2, sticky="e")
 
     def _ao_importar(self, chave: str | None):
         if not chave:
@@ -114,10 +149,8 @@ class Aplicacao(ctk.CTk):
             for campo, valor in edicoes.get(questao.get("numero", 0), {}).items():
                 if campo in questao:
                     questao[campo] = valor
-        info = concursos.obter(self.chave_concurso)
-        self.rotulo_concurso.configure(
-            text=f"{len(self.questoes)} questão(ões) — banco: {info['arquivo']}"
-        )
+        self._total_questoes = len(self.questoes)
+        self._atualizar_status_concurso()
         self.aba_estudo.definir_questoes(self.questoes)
 
     def salvar_banco_questoes(self):

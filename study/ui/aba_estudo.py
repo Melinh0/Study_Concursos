@@ -8,6 +8,7 @@ from tkinter import messagebox
 import customtkinter as ctk
 
 from .. import ia
+from . import responsivo
 
 LETRAS = ("A", "B", "C", "D", "E")
 
@@ -25,6 +26,7 @@ class AbaEstudo(ctk.CTkFrame):
         self.respostas: dict[int, dict] = banco.carregar_respostas()
         self.selecao = tk.StringVar(value="")
         self.gerando_ia = False
+        self._wraplength = 800
 
         self._criar_filtros()
         self._criar_conteudo()
@@ -33,36 +35,41 @@ class AbaEstudo(ctk.CTkFrame):
 
     def _criar_filtros(self):
         barra = ctk.CTkFrame(self, fg_color="transparent")
-        barra.pack(fill="x", pady=(0, 8))
+        barra.pack(fill="x", pady=(0, 4))
 
-        ctk.CTkLabel(barra, text="Tema:").pack(side="left")
+        itens = []
+        itens.append((ctk.CTkLabel(barra, text="Tema:"), 0))
         self.filtro_tema = ctk.CTkOptionMenu(
             barra, width=220, values=["Todas"], command=lambda _: self.aplicar_filtros()
         )
-        self.filtro_tema.pack(side="left", padx=(6, 14))
-
-        ctk.CTkLabel(barra, text="Concurso:").pack(side="left")
+        itens.append((self.filtro_tema, (6, 14)))
+        itens.append((ctk.CTkLabel(barra, text="Concurso:"), 0))
         self.filtro_concurso = ctk.CTkOptionMenu(
             barra, width=220, values=["Todos"], command=lambda _: self.aplicar_filtros()
         )
-        self.filtro_concurso.pack(side="left", padx=(6, 14))
-
+        itens.append((self.filtro_concurso, (6, 14)))
         self.botao_anterior = ctk.CTkButton(
             barra, text="← Anterior", width=95, command=self.questao_anterior
         )
-        self.botao_anterior.pack(side="left", padx=(0, 6))
+        itens.append((self.botao_anterior, (0, 6)))
         self.botao_proxima = ctk.CTkButton(
             barra, text="Próxima →", width=95, command=self.questao_proxima
         )
-        self.botao_proxima.pack(side="left")
+        itens.append((self.botao_proxima, 0))
+        responsivo.vigiar(barra, lambda: responsivo.refluir(barra, itens))
 
-        self.rotulo_posicao = ctk.CTkLabel(barra, text="Nenhuma questão carregada")
+        barra2 = ctk.CTkFrame(self, fg_color="transparent")
+        barra2.pack(fill="x", pady=(0, 8))
+        self.rotulo_stats = ctk.CTkLabel(barra2, text="Acertos: 0/0 (0%)", text_color="#F26B21")
+        self.rotulo_stats.pack(side="left")
+        self.rotulo_posicao = ctk.CTkLabel(barra2, text="Nenhuma questão carregada")
         self.rotulo_posicao.pack(side="right", padx=(14, 0))
-        self.rotulo_stats = ctk.CTkLabel(barra, text="Acertos: 0/0 (0%)", text_color="#F26B21")
-        self.rotulo_stats.pack(side="right", padx=(14, 0))
 
     def _criar_conteudo(self):
-        rolagem = ctk.CTkScrollableFrame(self)
+        envol = ctk.CTkFrame(self, fg_color="transparent", height=80)
+        envol.pack(fill="both", expand=True)
+        envol.pack_propagate(False)
+        rolagem = ctk.CTkScrollableFrame(envol)
         rolagem.pack(fill="both", expand=True)
         rolagem.columnconfigure(0, weight=1)
 
@@ -139,25 +146,29 @@ class AbaEstudo(ctk.CTkFrame):
         self.botao_editar = ctk.CTkButton(
             acoes, text="Editar enunciado", width=140, command=lambda: self.alternar_edicao("basico")
         )
-        self.botao_editar.pack(side="left", padx=(0, 5))
         self.botao_editar_completo = ctk.CTkButton(
             acoes, text="Edição completa", width=130, command=lambda: self.alternar_edicao("completo")
         )
-        self.botao_editar_completo.pack(side="left", padx=(0, 5))
         self.botao_editar_gabarito = ctk.CTkButton(
             acoes, text="Gabarito/Explicação", width=140, command=lambda: self.alternar_edicao("gabarito")
         )
-        self.botao_editar_gabarito.pack(side="left", padx=(0, 5))
         self.cor_padrao_botao = self.botao_editar.cget("fg_color")
         self.cor_padrao_botao_hover = self.botao_editar.cget("hover_color")
 
         self.botao_confirmar = ctk.CTkButton(
             acoes, text="Confirmar", width=100, command=self.confirmar_resposta, state="disabled"
         )
-        self.botao_confirmar.pack(side="left", padx=(0, 5))
-        ctk.CTkButton(
+        self.botao_ver_resposta = ctk.CTkButton(
             acoes, text="Ver resposta", width=110, command=self.mostrar_resposta
-        ).pack(side="left", padx=(0, 5))
+        )
+        itens_acoes = [
+            (self.botao_editar, (0, 5)),
+            (self.botao_editar_completo, (0, 5)),
+            (self.botao_editar_gabarito, (0, 5)),
+            (self.botao_confirmar, (0, 5)),
+            (self.botao_ver_resposta, 0),
+        ]
+        responsivo.vigiar(acoes, lambda: responsivo.refluir(acoes, itens_acoes))
 
         acoes2 = ctk.CTkFrame(self, fg_color="transparent")
         acoes2.pack(fill="x", pady=(5, 0))
@@ -165,14 +176,26 @@ class AbaEstudo(ctk.CTkFrame):
             acoes2, text="Gerar resolução com IA", width=180, fg_color="#2E7D32", hover_color="#1B5E20",
             command=self.gerar_resolucao_ia,
         )
-        self.botao_ia.pack(side="left", padx=(0, 5))
-        ctk.CTkButton(
+        self.botao_abrir_site = ctk.CTkButton(
             acoes2, text="Abrir no QConcursos", width=160, command=self.abrir_no_site
-        ).pack(side="left", padx=(0, 5))
-        ctk.CTkButton(
+        )
+        self.botao_limpar = ctk.CTkButton(
             acoes2, text="Limpar progresso", width=130, fg_color="#8B2E2E", hover_color="#6E2323",
             command=self.limpar_progresso,
-        ).pack(side="left")
+        )
+        itens_acoes2 = [
+            (self.botao_ia, (0, 5)),
+            (self.botao_abrir_site, (0, 5)),
+            (self.botao_limpar, 0),
+        ]
+        responsivo.vigiar(acoes2, lambda: responsivo.refluir(acoes2, itens_acoes2))
+
+    def definir_wraplength(self, largura: int):
+        if largura == self._wraplength:
+            return
+        self._wraplength = largura
+        for rotulo in self.rotulos_alternativas.values():
+            rotulo.configure(wraplength=largura)
 
     def trocar_banco(self, banco):
         self.banco = banco
