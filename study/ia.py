@@ -52,6 +52,9 @@ def modelo_padrao() -> str:
 
 def _montar_prompt(questao: dict) -> str:
     enunciado = (questao.get("enunciado") or "").strip()
+    texto = (questao.get("texto") or "").strip()
+    if texto:
+        enunciado = f"TEXTO ASSOCIADO:\n{texto}\n\n{enunciado}"
     alternativas = questao.get("alternativas") or {}
     linhas = [f"{letra}) {texto}" for letra, texto in alternativas.items() if texto]
     gabarito = (questao.get("gabarito") or questao.get("gabarito_copilot") or "").strip()

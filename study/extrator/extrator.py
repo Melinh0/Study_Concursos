@@ -44,6 +44,29 @@ document.querySelectorAll('.js-question-item').forEach(function (item) {
   };
   const enunciado = item.querySelector('.q-question-enunciation');
   coletarImagens(enunciado);
+  const textoEl = item.querySelector('.q-question-text .collapse');
+  coletarImagens(textoEl);
+  const textoAssociado = function (raiz) {
+    if (!raiz) return '';
+    const copia = raiz.cloneNode(true);
+    const pilha = [copia];
+    while (pilha.length) {
+      const no = pilha.pop();
+      if (no.nodeType === Node.TEXT_NODE) {
+        no.nodeValue = no.nodeValue.replace(/\s+/g, ' ');
+      } else if (no.nodeType === Node.ELEMENT_NODE) {
+        for (let i = 0; i < no.childNodes.length; i += 1) pilha.push(no.childNodes[i]);
+      }
+    }
+    copia.querySelectorAll('br').forEach(function (el) {
+      el.replaceWith(document.createTextNode('\n'));
+    });
+    copia.querySelectorAll('p, div, li, h1, h2, h3, h4, h5, h6, tr').forEach(function (el) {
+      el.appendChild(document.createTextNode('\n'));
+    });
+    return copia.textContent.replace(/\u00a0/g, ' ').replace(/[ \t]+/g, ' ')
+      .replace(/ *\n */g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  };
   const alternativas = {};
   item.querySelectorAll('input.js-question-answer').forEach(function (campo) {
     const rotulo = campo.closest('label') || campo.parentElement;
@@ -75,6 +98,7 @@ document.querySelectorAll('.js-question-item').forEach(function (item) {
     migalha: migalha,
     info: info,
     enunciado: enunciado ? limpar(enunciado.innerText) : '',
+    texto: textoAssociado(textoEl),
     alternativas: alternativas,
     imagens: imagens,
     gabarito: gabarito ? limpar(gabarito.textContent) : '',
@@ -131,6 +155,7 @@ document.querySelectorAll('div.mb-4').forEach(function (card) {
       cargo: normais[1] || ''
     },
     enunciado: enunciado ? limpar(enunciado.innerText) : '',
+    texto: '',
     alternativas: alternativas,
     imagens: imagens,
     gabarito: '',
@@ -817,6 +842,7 @@ class ExtratorQConcursos:
             "concurso": orgao or (partes_prova[2] if len(partes_prova) >= 3 else "Não informado"),
             "cargo": cargo,
             "enunciado": bruta.get("enunciado", ""),
+            "texto": bruta.get("texto", ""),
             "alternativas": bruta.get("alternativas") or {},
             "gabarito": self._limpar_gabarito(bruta.get("gabarito", "")),
             "explicacao": bruta.get("explicacao", ""),

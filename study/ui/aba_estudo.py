@@ -100,16 +100,23 @@ class AbaEstudo(ctk.CTkFrame):
             self.cor_texto_entry = entrada.cget("text_color")
         self.frame_edicao_meta.grid_remove()
 
-        ctk.CTkLabel(rolagem, text="Enunciado:", anchor="w").grid(row=2, column=0, sticky="ew", pady=(8, 0))
+        self.rotulo_texto = ctk.CTkLabel(rolagem, text="Texto associado:", anchor="w")
+        self.rotulo_texto.grid(row=2, column=0, sticky="ew", pady=(8, 0))
+        self.caixa_texto = ctk.CTkTextbox(rolagem, height=110, wrap="word")
+        self.caixa_texto.grid(row=3, column=0, sticky="ew", pady=(2, 4))
+        self.rotulo_texto.grid_remove()
+        self.caixa_texto.grid_remove()
+
+        ctk.CTkLabel(rolagem, text="Enunciado:", anchor="w").grid(row=4, column=0, sticky="ew", pady=(8, 0))
         self.caixa_enunciado = ctk.CTkTextbox(rolagem, height=170, wrap="word")
-        self.caixa_enunciado.grid(row=3, column=0, sticky="ew", pady=(2, 8))
+        self.caixa_enunciado.grid(row=5, column=0, sticky="ew", pady=(2, 8))
         self.cor_enunciado = self.caixa_enunciado.cget("fg_color")
         self.cor_texto_enunciado = self.caixa_enunciado.cget("text_color")
 
         self.alternativas: dict[str, ctk.CTkRadioButton] = {}
         self.rotulos_alternativas: dict[str, ctk.CTkLabel] = {}
         self.campos_alternativa: dict[str, ctk.CTkEntry] = {}
-        for indice, letra in enumerate(LETRAS, start=4):
+        for indice, letra in enumerate(LETRAS, start=6):
             linha = ctk.CTkFrame(rolagem, fg_color="transparent")
             linha.grid(row=indice, column=0, sticky="ew", pady=3)
             linha.columnconfigure(1, weight=1)
@@ -128,7 +135,7 @@ class AbaEstudo(ctk.CTkFrame):
             self.campos_alternativa[letra] = entrada
 
         caixa_resposta = ctk.CTkFrame(rolagem, fg_color="transparent")
-        caixa_resposta.grid(row=9, column=0, sticky="ew", pady=(10, 0))
+        caixa_resposta.grid(row=11, column=0, sticky="ew", pady=(10, 0))
         caixa_resposta.columnconfigure(0, weight=1)
         ctk.CTkLabel(caixa_resposta, text="RESPOSTA E EXPLICAÇÃO", anchor="w").grid(
             row=0, column=0, sticky="ew"
@@ -242,11 +249,25 @@ class AbaEstudo(ctk.CTkFrame):
     def _explicacao_de(self, questao: dict) -> str:
         return (questao.get("explicacao") or questao.get("explicacao_copilot") or "").strip()
 
+    def _exibir_texto(self, texto: str):
+        self.caixa_texto.configure(state="normal")
+        self.caixa_texto.delete("1.0", "end")
+        if texto:
+            self.caixa_texto.insert("1.0", texto)
+            self.caixa_texto.configure(state="disabled")
+            self.rotulo_texto.grid()
+            self.caixa_texto.grid()
+        else:
+            self.caixa_texto.configure(state="disabled")
+            self.rotulo_texto.grid_remove()
+            self.caixa_texto.grid_remove()
+
     def mostrar_questao(self):
         questao = self._questao_atual()
         if questao is None:
             self.rotulo_posicao.configure(text="Nenhuma questão encontrada")
             self.rotulo_meta.configure(text="")
+            self._exibir_texto("")
             self.caixa_enunciado.configure(state="normal")
             self.caixa_enunciado.delete("1.0", "end")
             self.caixa_enunciado.configure(state="disabled")
@@ -273,6 +294,8 @@ class AbaEstudo(ctk.CTkFrame):
             f"  |  Concurso: {questao.get('concurso', '')}  |  Assunto: {questao.get('assunto', '')}"
         )
         self.texto_cargo.configure(text=questao.get("cargo") or "—")
+
+        self._exibir_texto(questao.get("texto", ""))
 
         self.caixa_enunciado.configure(state="normal")
         self.caixa_enunciado.delete("1.0", "end")

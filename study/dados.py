@@ -46,6 +46,7 @@ def normalizar_questao(bruta: dict, numero: int | None = None) -> dict:
 
     questao["codigo"] = _texto(questao.get("codigo")) or _texto(questao.get("id"))
     questao["enunciado"] = _texto(questao.get("enunciado"))
+    questao["texto"] = _texto(questao.get("texto"))
     questao["banca"] = _texto(questao.get("banca"), "Não informado")
     questao["tema"] = _texto(questao.get("tema"), "Sem Tema")
     questao["assunto"] = _texto(questao.get("assunto"), "Não informado")
@@ -153,7 +154,7 @@ def mesclar(existentes: list[dict], novas: list[dict]) -> tuple[list[dict], dict
         if nova.get("imagens") and not atual.get("imagens"):
             atual["imagens"] = nova["imagens"]
             atual["possui_imagem"] = True
-        for campo in ("tema", "assunto", "concurso", "cargo", "banca", "url"):
+        for campo in ("tema", "assunto", "concurso", "cargo", "banca", "url", "texto"):
             if (not atual.get(campo) or atual.get(campo) in ("", "Não informado")) and nova.get(campo):
                 atual[campo] = nova[campo]
 
