@@ -24,7 +24,7 @@ Aplicação de estudo para concursos públicos, com interface moderna (customtki
 | CPRM — Serviço Geológico do Brasil | `questoes_cprm_com_gabarito_corrigidas.json` (640) | `study_progress_cprm.db` |
 | IBGE — Instituto Brasileiro de Geografia e Estatística | `questoes_ibge_com_gabarito.json` (396) | `study_progress_ibge.db` |
 | TJ-CE — Tribunal de Justiça do Ceará | `questoes_tj_ce_com_gabarito.json` (928) | `study_progress_tj-ce.db` |
-| Transpetro — Petróleo e Gás | `questoes_transpetro.json` (45) | `study_progress_transpetro.db` |
+| Transpetro — Petróleo e Gás | `questoes_transpetro.json` (445) | `study_progress_transpetro.db` |
 | CNU — Concurso Nacional Unificado | `questoes_cnu.json` (5) | `study_progress_cnu.db` |
 
 Novos concursos são detectados automaticamente: basta colocar um JSON novo em `questões/` e o seletor passa a oferecê-lo.
